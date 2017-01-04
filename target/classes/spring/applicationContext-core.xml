@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context.xsd
+			http://www.springframework.org/schema/tx
+			http://www.springframework.org/schema/tx/spring-tx.xsd
+            http://www.springframework.org/schema/aop
+            http://www.springframework.org/schema/aop/spring-aop.xsd"
+       default-lazy-init="true">
+    <!--  @Controller 声明Action组件
+     @Service    声明Service组件    @Service("myMovieLister")
+     @Repository 声明Dao组件
+     @Component   泛指组件, 当不好归类时.
+     @RequestMapping("/menu")  请求映射
+     @Resource  用于注入，( j2ee提供的 ) 默认按名称装配，@Resource(name="beanName")
+     @Autowired 用于注入，(spring提供的) 默认按类型装配
+     @Transactional( rollbackFor={Exception.class}) 事务管理
+     @ResponseBody
+     @Scope("prototype")   设定bean的作用域 -->
+
+    <!--注解可用-->
+    <context:annotation-config/>
+
+    <context:component-scan base-package="com.centryOf22th.*"/>
+
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+    <bean id="configProperties"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath*:config/*.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <tx:annotation-driven transaction-manager="businessTransactionManager"/>
+
+    <bean id="businessTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+
+    <!--aop切点,对那些方法织入代码,进行aop增强-->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.*.*.service.*Service.*(..))"/>
+    </aop:config>
+
+    <!-- 实现类需要有接口，针对接口的方法 -->
+    <!--定义@Transactionl注解的实现类可以不需要接口 -->
+    <tx:advice id="txAdvice" transaction-manager="businessTransactionManager">
+        <tx:attributes>
+            <!--一、Propagation取值：
+            REQUIRED（默认值）：在有transaction状态下执行；如当前没有transaction，则创建新的transaction；
+            SUPPORTS：如当前有transaction，则在transaction状态下执行；如果当前没有transaction，在无transaction状态下执行；
+            MANDATORY：必须在有transaction状态下执行，如果当前没有transaction，则抛出异常IllegalTransactionStateException；
+            REQUIRES_NEW：创建新的transaction并执行；如果当前已有transaction，则将当前transaction挂起；
+            NOT_SUPPORTED：在无transaction状态下执行；如果当前已有transaction，则将当前transaction挂起；
+
+            NEVER：在无transaction状态下执行；如果当前已有transaction，则抛出异常IllegalTransactionStateExceptio-->
+            <tx:method name="save*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="logicDelete*" propagation="REQUIRED"/>
+            <tx:method name="batchDelete*" propagation="REQUIRED"/>
+            <tx:method name="batchLogicDelete*" propagation="REQUIRED"/>
+
+        </tx:attributes>
+    </tx:advice>
+
+</beans>
